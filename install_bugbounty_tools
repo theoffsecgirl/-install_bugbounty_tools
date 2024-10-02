@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Crear carpetas para organizar las herramientas
+mkdir -p ~/bugbounty-tools/{reconocimiento,exploracion,exploits,wordlists,web,networking,scanning,miscelanea}
+
+# Actualizar el sistema e instalar dependencias básicas
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl wget build-essential python3 python3-pip docker.io docker-compose ruby-full snapd nodejs npm
+
+# Instalar Go si no está instalado
+if ! [ -x "$(command -v go)" ]; then
+    echo "Instalando Go..."
+    wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin
+    echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
+    source ~/.bashrc
+fi
+
+echo "Instalando herramientas de reconocimiento..."
+
+# Herramientas de reconocimiento
+go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+mv ~/go/bin/subfinder ~/bugbounty-tools/reconocimiento/
+
+go install github.com/tomnomnom/assetfinder@latest
+mv ~/go/bin/assetfinder ~/bugbounty-tools/reconocimiento/
+
+go install github.com/tomnomnom/waybackurls@latest
+mv ~/go/bin/waybackurls ~/bugbounty-tools/reconocimiento/
+
+echo "Instalando herramientas de exploración..."
+
+# Herramientas de exploración
+git clone https://github.com/maurosoria/dirsearch.git ~/bugbounty-tools/exploracion/dirsearch
+sudo ln -s ~/bugbounty-tools/exploracion/dirsearch/dirsearch.py /usr/local/bin/dirsearch
+
+go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+mv ~/go/bin/httpx ~/bugbounty-tools/exploracion/
+
+git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git ~/bugbounty-tools/exploracion/sqlmap
+sudo ln -s ~/bugbounty-tools/exploracion/sqlmap/sqlmap.py /usr/local/bin/sqlmap
+
+echo "Instalando herramientas de exploits..."
+
+# Herramientas de exploits
+go install github.com/ffuf/ffuf@latest
+mv ~/go/bin/ffuf ~/bugbounty-tools/exploits/
+
+git clone https://github.com/EnableSecurity/wafw00f.git ~/bugbounty-tools/exploits/wafw00f
+cd ~/bugbounty-tools/exploits/wafw00f
+sudo python3 setup.py install
+cd ~
+
+echo "Instalando herramientas de escaneo..."
+
+# Herramientas de escaneo
+sudo apt install -y nmap
+sudo apt install -y masscan
+sudo snap install amass
+go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+mv ~/go/bin/nuclei ~/bugbounty-tools/scanning/
+
+echo "Instalando herramientas web..."
+
+# Herramientas web
+npm install -g aquatone
+sudo mv /usr/local/bin/aquatone ~/bugbounty-tools/web/
+
+echo "Instalando otras herramientas y wordlists..."
+
+# Misceláneas y wordlists
+git clone https://github.com/danielmiessler/SecLists.git ~/bugbounty-tools/wordlists/SecLists
+
+# Limpieza final
+sudo apt autoremove -y
+echo "¡Instalación completa! Todas las herramientas están organizadas en ~/bugbounty-tools/"
