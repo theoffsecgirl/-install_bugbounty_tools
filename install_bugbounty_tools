@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# Definición de colores
+VERDE="\033[92m"
+ROJO="\033[91m"
+AMARILLO="\033[93m"
+RESET="\033[0m"
+
+# Banner ASCII
+banner() {
+    echo -e "${VERDE}"
+    cat << "EOF"
+     _____   _             ___     __    __   ___               ___   _         _ 
+    |_   _| | |_    ___   / _ \   / _|  / _| / __|  ___   __   / __| (_)  _ _  | |
+      | |   | ' \  / -_) | (_) | |  _| |  _| \__ \ / -_) / _| | (_ | | | | '_| | |
+      |_|   |_||_| \___|  \___/  |_|   |_|   |___/ \___| \__|  \___| |_| |_|   |_|
+EOF
+    echo -e "${RESET}"
+}
+
 # Script de instalación automatizada de herramientas de Bug Bounty compatibles con terminal TTY basado en el repositorio Awesome Bug Bounty Tools.
 # Versión: 3.0
 # Autor: TheOffSecGirl
@@ -14,7 +32,7 @@ MISC_DIR="$BUG_BOUNTY_TOOLS_DIR/misc"
 WORDLIST_DIR="$BUG_BOUNTY_TOOLS_DIR/wordlists"
 
 # Crear función para crear directorios solo si se usan
-function create_directory_if_needed {
+create_directory_if_needed() {
     local dir=$1
     if [ ! -d "$dir" ]; then
         mkdir -p "$dir"
@@ -22,6 +40,7 @@ function create_directory_if_needed {
 }
 
 # Actualizar el sistema e instalar herramientas esenciales
+echo -e "${AMARILLO}Actualizando el sistema e instalando herramientas esenciales...${RESET}"
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y git curl build-essential python3-pip golang cargo
 
@@ -29,14 +48,14 @@ sudo apt install -y git curl build-essential python3-pip golang cargo
 export PATH=$PATH:/usr/local/go/bin
 
 # Función para instalar herramientas con git
-function install_from_git {
+install_from_git() {
     local repo_url=$1
     local target_dir=$2
     git clone "$repo_url" "$target_dir"
 }
 
 # Subdomain Enumeration (Solo herramientas compatibles con TTY)
-echo "Instalando herramientas de Subdomain Enumeration..."
+echo -e "${AMARILLO}Instalando herramientas de Subdomain Enumeration...${RESET}"
 
 create_directory_if_needed "$ENUMERATION_DIR"
 install_from_git "https://github.com/projectdiscovery/subfinder.git" "$ENUMERATION_DIR/subfinder"
@@ -51,7 +70,7 @@ cd "$ENUMERATION_DIR/amass" && go build ./... && sudo cp amass /usr/local/bin/
 cd "$ENUMERATION_DIR/findomain" && cargo build --release && sudo cp target/release/findomain /usr/local/bin/
 
 # Port Scanning (Solo herramientas TTY)
-echo "Instalando herramientas de Port Scanning..."
+echo -e "${AMARILLO}Instalando herramientas de Port Scanning...${RESET}"
 
 create_directory_if_needed "$SCANNING_DIR"
 sudo apt install -y masscan nmap
@@ -63,7 +82,7 @@ cd "$SCANNING_DIR/rustscan" && cargo build --release && sudo cp target/release/r
 cd "$SCANNING_DIR/naabu" && go build && sudo cp naabu /usr/local/bin/
 
 # Content Discovery (Solo herramientas TTY)
-echo "Instalando herramientas de Content Discovery..."
+echo -e "${AMARILLO}Instalando herramientas de Content Discovery...${RESET}"
 
 create_directory_if_needed "$FUZZING_DIR"
 sudo apt install -y gobuster
@@ -75,7 +94,7 @@ install_from_git "https://github.com/tomnomnom/hakrawler.git" "$FUZZING_DIR/hakr
 cd "$FUZZING_DIR/feroxbuster" && cargo build --release && sudo cp target/release/feroxbuster /usr/local/bin/
 
 # Links (Solo herramientas TTY)
-echo "Instalando herramientas de Links..."
+echo -e "${AMARILLO}Instalando herramientas de Links...${RESET}"
 
 create_directory_if_needed "$MISC_DIR"
 install_from_git "https://github.com/GerbenJansen/linkfinder.git" "$MISC_DIR/linkfinder"
@@ -88,13 +107,13 @@ cd "$MISC_DIR/waybackurls" && go build && sudo cp waybackurls /usr/local/bin/
 cd "$MISC_DIR/qsreplace" && go build && sudo cp qsreplace /usr/local/bin/
 
 # Fuzzing (Solo herramientas TTY)
-echo "Instalando herramientas de Fuzzing..."
+echo -e "${AMARILLO}Instalando herramientas de Fuzzing...${RESET}"
 
 sudo apt install -y ffuf wfuzz
 install_from_git "https://github.com/fuzzdb-project/fuzzdb.git" "$FUZZING_DIR/fuzzdb"
 
 # Exploitation (Solo herramientas TTY)
-echo "Instalando herramientas de Exploitation..."
+echo -e "${AMARILLO}Instalando herramientas de Exploitation...${RESET}"
 
 create_directory_if_needed "$EXPLOITS_DIR"
 install_from_git "https://github.com/commixproject/commix.git" "$EXPLOITS_DIR/commix"
@@ -102,7 +121,7 @@ sudo ln -s "$EXPLOITS_DIR/commix/commix.py" /usr/local/bin/commix
 install_from_git "https://github.com/s0md3v/Corsy.git" "$EXPLOITS_DIR/corsy"
 
 # Miscellaneous (Solo herramientas TTY)
-echo "Instalando herramientas adicionales..."
+echo -e "${AMARILLO}Instalando herramientas adicionales...${RESET}"
 
 create_directory_if_needed "$WORDLIST_DIR"
 install_from_git "https://github.com/danielmiessler/SecLists.git" "$WORDLIST_DIR/seclists"
@@ -116,4 +135,4 @@ cd "$MISC_DIR/unfurl" && go build && sudo cp unfurl /usr/local/bin/
 cd "$MISC_DIR/httprobe" && go build && sudo cp httprobe /usr/local/bin/
 cd "$SCANNING_DIR/nuclei/v2/cmd/nuclei" && go build && sudo cp nuclei /usr/local/bin/
 
-echo "Instalación completada. Todas las herramientas compatibles con TTY han sido instaladas correctamente."
+echo -e "${VERDE}Instalación completada. Todas las herramientas compatibles con TTY han sido instaladas correctamente.${RESET}"
