@@ -1,77 +1,90 @@
 #!/bin/bash
 
-# Crear carpetas para organizar las herramientas
-mkdir -p ~/bugbounty-tools/{reconocimiento,exploracion,exploits,wordlists,web,networking,scanning,miscelanea}
+# Directorios de trabajo
+BUG_BOUNTY_TOOLS_DIR=~/bugbounty-tools
+EXPLOITS_DIR="$BUG_BOUNTY_TOOLS_DIR/exploits"
+ENUMERATION_DIR="$BUG_BOUNTY_TOOLS_DIR/enumeration"
+SCANNING_DIR="$BUG_BOUNTY_TOOLS_DIR/scanning"
+FUZZING_DIR="$BUG_BOUNTY_TOOLS_DIR/fuzzing"
+MISC_DIR="$BUG_BOUNTY_TOOLS_DIR/misc"
+WORDLIST_DIR="$BUG_BOUNTY_TOOLS_DIR/wordlists"
 
-# Actualizar el sistema e instalar dependencias básicas
+# Crear los directorios si no existen
+mkdir -p "$EXPLOITS_DIR" "$ENUMERATION_DIR" "$SCANNING_DIR" "$FUZZING_DIR" "$MISC_DIR" "$WORDLIST_DIR"
+
+# Actualizar e instalar herramientas esenciales
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y git curl wget build-essential python3 python3-pip docker.io docker-compose ruby-full snapd nodejs npm
+sudo apt install -y git curl build-essential python3-pip golang
 
-# Instalar Go si no está instalado
-if ! [ -x "$(command -v go)" ]; then
-    echo "Instalando Go..."
-    wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
-    sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-    export PATH=$PATH:/usr/local/go/bin
-    echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
-    source ~/.bashrc
-fi
+# Añadir Go al PATH si no está
+export PATH=$PATH:/usr/local/go/bin
 
-echo "Instalando herramientas de reconocimiento..."
+# Función para instalar herramientas con git
+function install_from_git {
+    local repo_url=$1
+    local target_dir=$2
+    git clone "$repo_url" "$target_dir"
+}
 
-# Herramientas de reconocimiento
-go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-mv ~/go/bin/subfinder ~/bugbounty-tools/reconocimiento/
+# Subdomain Enumeration Tools
+echo "Instalando herramientas de enumeración de subdominios..."
 
-go install github.com/tomnomnom/assetfinder@latest
-mv ~/go/bin/assetfinder ~/bugbounty-tools/reconocimiento/
+install_from_git "https://github.com/projectdiscovery/subfinder.git" "$ENUMERATION_DIR/subfinder"
+install_from_git "https://github.com/OWASP/Amass.git" "$ENUMERATION_DIR/amass"
+install_from_git "https://github.com/tomnomnom/assetfinder.git" "$ENUMERATION_DIR/assetfinder"
 
-go install github.com/tomnomnom/waybackurls@latest
-mv ~/go/bin/waybackurls ~/bugbounty-tools/reconocimiento/
+# Compilar Subfinder y Amass
+cd "$ENUMERATION_DIR/subfinder/v2/cmd/subfinder" && go build && sudo cp subfinder /usr/local/bin/
+cd "$ENUMERATION_DIR/amass" && go build ./... && sudo cp amass /usr/local/bin/
 
-echo "Instalando herramientas de exploración..."
+# Port Scanning Tools
+echo "Instalando herramientas de escaneo de puertos..."
 
-# Herramientas de exploración
-git clone https://github.com/maurosoria/dirsearch.git ~/bugbounty-tools/exploracion/dirsearch
-sudo ln -s ~/bugbounty-tools/exploracion/dirsearch/dirsearch.py /usr/local/bin/dirsearch
+sudo apt install -y masscan nmap
+install_from_git "https://github.com/RustScan/RustScan.git" "$SCANNING_DIR/rustscan"
 
-go install github.com/projectdiscovery/httpx/cmd/httpx@latest
-mv ~/go/bin/httpx ~/bugbounty-tools/exploracion/
+# Compilar RustScan
+cd "$SCANNING_DIR/rustscan" && cargo build --release && sudo cp target/release/rustscan /usr/local/bin/
 
-git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git ~/bugbounty-tools/exploracion/sqlmap
-sudo ln -s ~/bugbounty-tools/exploracion/sqlmap/sqlmap.py /usr/local/bin/sqlmap
+# Content Discovery Tools
+echo "Instalando herramientas de descubrimiento de contenido..."
 
-echo "Instalando herramientas de exploits..."
+sudo apt install -y gobuster
+install_from_git "https://github.com/epi052/feroxbuster.git" "$FUZZING_DIR/feroxbuster"
+cd "$FUZZING_DIR/feroxbuster" && cargo build --release && sudo cp target/release/feroxbuster /usr/local/bin/
 
-# Herramientas de exploits
-go install github.com/ffuf/ffuf@latest
-mv ~/go/bin/ffuf ~/bugbounty-tools/exploits/
+# Vulnerability Scanning Tools
+echo "Instalando herramientas de escaneo de vulnerabilidades..."
 
-git clone https://github.com/EnableSecurity/wafw00f.git ~/bugbounty-tools/exploits/wafw00f
-cd ~/bugbounty-tools/exploits/wafw00f
-sudo python3 setup.py install
-cd ~
+install_from_git "https://github.com/projectdiscovery/nuclei.git" "$SCANNING_DIR/nuclei"
+cd "$SCANNING_DIR/nuclei/v2/cmd/nuclei" && go build && sudo cp nuclei /usr/local/bin/
 
-echo "Instalando herramientas de escaneo..."
+install_from_git "https://github.com/projectdiscovery/httpx.git" "$SCANNING_DIR/httpx"
+cd "$SCANNING_DIR/httpx/cmd/httpx" && go build && sudo cp httpx /usr/local/bin/
 
-# Herramientas de escaneo
-sudo apt install -y nmap
-sudo apt install -y masscan
-sudo snap install amass
-go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
-mv ~/go/bin/nuclei ~/bugbounty-tools/scanning/
+# Fuzzing Tools
+echo "Instalando herramientas de fuzzing..."
 
-echo "Instalando herramientas web..."
+sudo apt install -y ffuf wfuzz
 
-# Herramientas web
-npm install -g aquatone
-sudo mv /usr/local/bin/aquatone ~/bugbounty-tools/web/
+# Exploitation Tools
+echo "Instalando herramientas de explotación..."
 
-echo "Instalando otras herramientas y wordlists..."
+install_from_git "https://github.com/commixproject/commix.git" "$EXPLOITS_DIR/commix"
+sudo ln -s "$EXPLOITS_DIR/commix/commix.py" /usr/local/bin/commix
 
-# Misceláneas y wordlists
-git clone https://github.com/danielmiessler/SecLists.git ~/bugbounty-tools/wordlists/SecLists
+install_from_git "https://github.com/s0md3v/Corsy.git" "$EXPLOITS_DIR/corsy"
 
-# Limpieza final
-sudo apt autoremove -y
-echo "¡Instalación completa! Todas las herramientas están organizadas en ~/bugbounty-tools/"
+# Herramientas adicionales mencionadas en la lista de Awesome Bug Bounty Tools
+
+# Eyewitness - Para screenshots y análisis de sitios
+install_from_git "https://github.com/FortyNorthSecurity/EyeWitness.git" "$MISC_DIR/eyewitness"
+cd "$MISC_DIR/eyewitness/Python/setup" && sudo ./setup.sh
+
+# SecLists - Wordlists
+echo "Descargando wordlists..."
+
+git clone https://github.com/danielmiessler/SecLists.git "$WORDLIST_DIR/seclists"
+
+# Finalización
+echo "Instalación completada. Todas las herramientas han sido instaladas correctamente."
