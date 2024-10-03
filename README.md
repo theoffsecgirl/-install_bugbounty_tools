@@ -1,6 +1,5 @@
 
 # Uso
-`nano install_bugbounty_tools.sh`
 `chmod +x install_bugbounty_tools.sh`
 `./install_bugbounty_tools.sh`
 
